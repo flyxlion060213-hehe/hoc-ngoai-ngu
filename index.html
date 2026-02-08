@@ -3,85 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoMusic - Học & Dịch Tự Động</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <title>LingoMusic - Đối Chiếu Lyrics Chính Xác</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
-        .active-line { 
-            background: #f0f7ff; 
-            color: #2563eb !important; 
-            border-left: 5px solid #2563eb;
-            transform: scale(1.02);
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.1);
-        }
-        .lyrics-line { transition: all 0.3s ease; border-radius: 12px; border-left: 5px solid transparent; cursor: pointer; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        #video-container { border-radius: 2rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #000; }
-        .loading-dots::after { content: '...'; animation: dots 1s steps(5, end) infinite; }
-        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #2563eb; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #2563eb, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #2563eb, .5em 0 0 #2563eb; } }
+        .active-line { background: #eff6ff; color: #2563eb !important; border-left: 5px solid #2563eb; transform: scale(1.02); }
+        .lyrics-line { transition: all 0.3s ease; border-radius: 12px; border-left: 5px solid transparent; }
+        .original-text { font-weight: 700; color: #1e293b; }
+        .matched-text { font-size: 0.85rem; color: #64748b; font-style: italic; } /* Lời từ YouTube dùng để đối chiếu */
     </style>
 </head>
-<body class="bg-slate-50">
-
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 py-4 px-8">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
-                    <i class="fas fa-language text-white"></i>
-                </div>
-                <span class="text-xl font-bold tracking-tight text-slate-800">LingoMusic <span class="text-blue-600">Translator</span></span>
-            </div>
-            <div id="status" class="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full text-slate-500 uppercase">Offline</div>
-        </div>
-    </nav>
+<body class="bg-slate-50 font-sans">
 
     <main class="max-w-7xl mx-auto p-4 lg:p-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             <div class="lg:col-span-5 space-y-6">
-                <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
-                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase">Bước 1: Link YouTube</label>
-                    <input type="text" id="videoUrl" placeholder="Dán link tại đây..." 
-                           class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-blue-400 transition-all">
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                    <h2 class="font-black text-blue-600 mb-4 uppercase tracking-tighter">Cấu hình bài học</h2>
                     
-                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase">Bước 2: Lời gốc (Anh/Hàn/...)</label>
-                    <textarea id="rawLyrics" rows="6" placeholder="Dán lời bài hát thuần vào đây..." 
-                              class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 transition-all text-sm font-medium"></textarea>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">1. LINK YOUTUBE</label>
+                    <input type="text" id="videoUrl" placeholder="Dán link bài hát..." 
+                           class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-blue-400">
                     
-                    <div class="flex gap-2 mt-4">
-                        <select id="sourceLang" class="bg-slate-100 rounded-xl px-4 text-sm font-bold outline-none">
-                            <option value="auto">Tự phát hiện</option>
-                            <option value="en">Tiếng Anh</option>
-                            <option value="ko">Tiếng Hàn</option>
-                        </select>
-                        <button onclick="startProcessing()" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">
-                            DỊCH & ĐỒNG BỘ
-                        </button>
-                    </div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">2. CHÉP LYRICS CHUẨN VÀO ĐÂY (ĐỂ ĐỐI CHIẾU)</label>
+                    <textarea id="manualLyrics" rows="8" placeholder="Dán lời bài hát chính xác bạn copy trên mạng vào đây..." 
+                              class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 text-sm font-medium"></textarea>
+                    
+                    <button onclick="loadPerfectLesson()" class="w-full mt-4 bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all">
+                        KHỚP LỜI CHUẨN & DỊCH
+                    </button>
                 </div>
 
-                <div id="video-container" class="aspect-video relative">
+                <div class="rounded-[2rem] overflow-hidden bg-black shadow-2xl aspect-video">
                     <div id="player"></div>
                 </div>
             </div>
 
             <div class="lg:col-span-7">
-                <div class="bg-white rounded-[2.5rem] border border-slate-200 h-[700px] flex flex-col overflow-hidden shadow-sm">
+                <div class="bg-white rounded-[2.5rem] border border-slate-200 h-[750px] flex flex-col overflow-hidden shadow-sm">
                     <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                        <span class="font-bold text-slate-700">BẢN DỊCH SONG NGỮ</span>
-                        <div id="loader" class="hidden text-blue-600 text-sm font-bold">
-                            <span class="loading-dots">Đang dịch</span>
-                        </div>
+                        <span class="font-bold text-slate-700 uppercase text-sm tracking-widest">Lời bài hát đã đối chiếu</span>
+                        <span id="syncStatus" class="text-[10px] bg-slate-200 px-2 py-1 rounded font-bold uppercase">Chờ xử lý</span>
                     </div>
                     <div id="lyricsContent" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                        <div class="text-center py-20">
-                            <img src="https://cdn-icons-png.flaticon.com/512/3844/3844724.png" class="w-20 mx-auto opacity-20 mb-4">
-                            <p class="text-slate-400 italic">Hệ thống sẽ tự động dịch sang tiếng Việt...</p>
                         </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -91,86 +57,88 @@
     <script>
         let player, lyricsData = [], syncTimer;
 
-        async function startProcessing() {
+        async function loadPerfectLesson() {
             const url = document.getElementById('videoUrl').value;
-            const id = extractVideoID(url);
-            const rawText = document.getElementById('rawLyrics').value;
+            const id = extractId(url);
+            const manualText = document.getElementById('manualLyrics').value;
 
-            if (!id || !rawText) return alert("Vui lòng nhập đủ Link và Lời!");
+            if (!id || !manualText) return alert("Vui lòng nhập đủ link và lời bài hát!");
+            
+            document.getElementById('syncStatus').innerText = "Đang đối chiếu...";
 
-            document.getElementById('loader').classList.remove('hidden');
-            document.getElementById('status').innerText = "Processing";
+            try {
+                // 1. Lấy mốc thời gian từ Server (Cách 2)
+                const response = await fetch(`http://localhost:3000/get-lyrics?id=${id}`);
+                const youtubeData = await response.json();
 
-            // 1. Khởi tạo Video
-            if (player) player.destroy();
-            player = new YT.Player('player', {
-                videoId: id,
-                playerVars: { 'origin': window.location.origin, 'enablejsapi': 1, 'rel': 0 },
-                events: { 
-                    'onReady': async (e) => {
-                        const duration = e.target.getDuration();
-                        const lines = rawText.split('\n').filter(l => l.trim() !== "");
-                        const interval = duration / lines.length;
+                // 2. Tùy cơ ứng biến: Đối chiếu lời Manual với mốc thời gian YouTube
+                const manualLines = manualText.split('\n').filter(l => l.trim() !== "");
+                
+                // Thuật toán khớp lời: Gán từng dòng manual vào mốc thời gian của YouTube
+                lyricsData = await Promise.all(manualLines.map(async (line, i) => {
+                    // Lấy mốc thời gian từ dòng tương ứng của Youtube (nếu có)
+                    const ytMatch = youtubeData[i] || youtubeData[youtubeData.length - 1];
+                    const translated = await translateText(line);
+                    return {
+                        s: ytMatch.offset / 1000,
+                        original: line,
+                        ytSource: ytMatch.text, // Để đối chiếu nếu cần xem YouTube nghe gì
+                        vietnamese: translated
+                    };
+                }));
 
-                        // 2. Tùy cơ ứng biến: Dịch từng dòng sang VN
-                        lyricsData = await Promise.all(lines.map(async (text, i) => {
-                            const translated = await translateText(text);
-                            return {
-                                s: i * interval + (interval * 0.1),
-                                t: text,
-                                v: translated
-                            };
-                        }));
-
-                        document.getElementById('loader').classList.add('hidden');
-                        document.getElementById('status').innerText = "Live";
-                        renderLyrics();
-                        e.target.playVideo();
-                    },
-                    'onStateChange': onPlayerStateChange
-                }
-            });
+                // 3. Khởi tạo trình phát
+                if (player) player.destroy();
+                player = new YT.Player('player', {
+                    videoId: id,
+                    events: { 
+                        'onReady': (e) => { 
+                            renderLyrics(); 
+                            e.target.playVideo();
+                            document.getElementById('syncStatus').innerText = "Đã khớp chuẩn";
+                        }, 
+                        'onStateChange': onPlayerStateChange 
+                    }
+                });
+            } catch (e) {
+                alert("Lỗi: Hãy chắc chắn bạn đã chạy server Node.js ở port 3000!");
+            }
         }
 
         async function translateText(text) {
-            try {
-                const source = document.getElementById('sourceLang').value;
-                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=vi&dt=t&q=${encodeURI(text)}`;
-                const res = await fetch(url);
-                const data = await res.json();
-                return data[0][0][0];
-            } catch { return "Không thể dịch dòng này"; }
+            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(text)}`);
+            const data = await res.json();
+            return data[0][0][0];
         }
 
         function renderLyrics() {
             const container = document.getElementById('lyricsContent');
             container.innerHTML = lyricsData.map((l, i) => `
-                <div id="line-${i}" onclick="player.seekTo(${l.s}, true)" class="lyrics-line p-5 hover:bg-slate-50 transition-all">
-                    <p class="text-lg font-bold text-slate-800 leading-tight mb-1">${l.t}</p>
-                    <p class="text-md text-blue-600/80 font-medium italic">${l.v}</p>
+                <div id="line-${i}" onclick="player.seekTo(${l.s})" class="lyrics-line p-5 hover:bg-slate-50 transition-all">
+                    <p class="original-text mb-1">${l.original}</p>
+                    <p class="text-blue-600 text-sm font-medium mb-2 leading-relaxed">${l.vietnamese}</p>
+                    <p class="matched-text border-t pt-2 opacity-50">YouTube nghe là: ${l.ytSource}</p>
                 </div>
             `).join('');
         }
 
-        function onPlayerStateChange(event) {
-            if (event.data == YT.PlayerState.PLAYING) {
+        function onPlayerStateChange(e) {
+            if (e.data == YT.PlayerState.PLAYING) {
                 syncTimer = setInterval(() => {
                     const now = player.getCurrentTime();
                     lyricsData.forEach((line, i) => {
                         const el = document.getElementById(`line-${i}`);
                         if (now >= line.s && (i === lyricsData.length - 1 || now < lyricsData[i+1].s)) {
-                            if (!el.classList.contains('active-line')) {
-                                document.querySelectorAll('.lyrics-line').forEach(l => l.classList.remove('active-line'));
-                                el.classList.add('active-line');
-                                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }
+                            document.querySelectorAll('.lyrics-line').forEach(l => l.classList.remove('active-line'));
+                            el.classList.add('active-line');
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                     });
                 }, 300);
             } else { clearInterval(syncTimer); }
         }
 
-        function extractVideoID(url) {
+        function extractId(url) {
             const match = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
             return (match && match[2].length == 11) ? match[2] : false;
         }
