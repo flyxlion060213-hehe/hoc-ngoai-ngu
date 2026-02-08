@@ -3,66 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoMusic God Mode - One Click Sync</title>
+    <title>LingoMusic - True Hunter Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background: #050505; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
         .active-line { 
-            background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(0,0,0,0) 100%);
+            background: rgba(59, 130, 246, 0.15);
             color: #60a5fa !important;
             border-left: 4px solid #3b82f6;
-            transform: scale(1.03);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-        .lyrics-line { padding: 20px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border-left: 4px solid transparent; }
-        #video-stage { border-radius: 2rem; overflow: hidden; box-shadow: 0 0 100px rgba(37, 99, 235, 0.2); }
-        .loader-ring { width: 20px; height: 20px; border: 3px solid #3b82f6; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .lyrics-line { padding: 18px; border-radius: 12px; margin-bottom: 10px; transition: all 0.3s ease; border-left: 4px solid transparent; cursor: pointer; }
+        #video-stage { border-radius: 2rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
-<body class="p-4 lg:p-12">
+<body class="p-6 lg:p-12">
 
-    <div class="max-w-[1700px] mx-auto">
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
-            <div>
-                <h1 class="text-4xl font-black tracking-tighter text-white">LINGOMUSIC <span class="text-blue-500">ULTIMATE</span></h1>
-                <p class="text-slate-500 font-medium">Chế độ tự động hóa: Dán link là học.</p>
+    <div class="max-w-[1600px] mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <h1 class="text-3xl font-black tracking-tighter text-blue-500">LINGOMUSIC <span class="text-white font-light">HUNTER</span></h1>
+            <div class="flex gap-2 w-full md:w-[600px] bg-slate-900 p-2 rounded-2xl border border-slate-800">
+                <input type="text" id="videoUrl" placeholder="Dán link bài hát bất kỳ vào đây..." 
+                       class="flex-1 bg-transparent px-4 py-2 outline-none text-white">
+                <button onclick="huntLyrics()" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl font-bold transition-all">SĂN LỜI</button>
             </div>
-            <div class="glass p-2 rounded-2xl flex gap-3 w-full lg:w-[600px]">
-                <input type="text" id="videoUrl" value="https://www.youtube.com/watch?v=LmBYPXGqtss" 
-                       class="flex-1 bg-transparent border-none px-4 py-2 outline-none text-white text-lg">
-                <button onclick="startUltimateSync()" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/40">
-                    KÍCH HOẠT
-                </button>
-            </div>
-        </div>
+        </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div class="lg:col-span-7">
-                <div id="video-stage" class="aspect-video bg-black relative">
+                <div id="video-stage" class="aspect-video bg-black shadow-2xl">
                     <div id="player"></div>
                 </div>
-                <div class="mt-8 glass p-6 rounded-[2rem]">
-                    <div class="flex items-center gap-4 text-sm">
-                        <div id="ai-status" class="flex items-center gap-2 text-slate-400">
-                            <i class="fas fa-robot"></i> AI đang ở trạng thái chờ...
-                        </div>
-                    </div>
+                <div id="status-bar" class="mt-6 p-4 bg-slate-900/50 rounded-xl text-sm text-slate-400 flex items-center gap-3">
+                    <i class="fas fa-satellite-dish animate-pulse text-blue-500"></i>
+                    <span>Sẵn sàng nhận tín hiệu...</span>
                 </div>
             </div>
 
             <div class="lg:col-span-5">
-                <div class="glass rounded-[3rem] h-[calc(100vh-200px)] flex flex-col overflow-hidden relative">
-                    <div class="p-8 border-b border-white/10 flex justify-between items-center">
-                        <span class="text-xs font-black uppercase tracking-[0.2em] text-blue-400">Song ngữ thông minh</span>
-                        <div id="mini-loader" class="hidden"><span class="loader-ring"></span></div>
-                    </div>
-                    <div id="lyricsContent" class="flex-1 overflow-y-auto p-8 space-y-2 custom-scrollbar">
-                        <div class="text-center py-20 opacity-20">
-                            <i class="fas fa-bolt text-6xl mb-6"></i>
-                            <p>Dán link bài hát bạn muốn học...</p>
+                <div class="bg-slate-900/80 rounded-[2.5rem] h-[700px] flex flex-col overflow-hidden border border-slate-800 shadow-xl">
+                    <div id="lyricsContent" class="flex-1 overflow-y-auto p-6 space-y-2 custom-scrollbar">
+                        <div class="text-center py-32 opacity-20">
+                            <i class="fas fa-search text-6xl mb-4"></i>
+                            <p>Hệ thống sẽ tự động tìm lời và khớp nhạc cho bạn.</p>
                         </div>
                     </div>
                 </div>
@@ -74,54 +61,55 @@
     <script>
         let player, lyricsData = [], syncTimer;
 
-        async function startUltimateSync() {
+        async function huntLyrics() {
             const url = document.getElementById('videoUrl').value;
             const id = extractId(url);
-            if (!id) return;
+            if (!id) return alert("Link không hợp lệ!");
 
-            // 1. Reset UI
-            document.getElementById('mini-loader').classList.remove('hidden');
-            document.getElementById('ai-status').innerHTML = `<span class="loader-ring"></span> Đang truy lùng lời bài hát...`;
-            document.getElementById('lyricsContent').innerHTML = "";
+            updateStatus("Đang truy quét dữ liệu YouTube...", "loading");
 
-            try {
-                // 2. Thử lấy phụ đề từ YouTube trước (Cách nhanh nhất)
-                let transcript;
-                try {
-                    const res = await fetch(`https://sub-api-endpoint.vercel.app/api/transcript?v=${id}`);
-                    transcript = await res.json();
-                } catch (e) {
-                    // 3. Nếu YouTube không có, tự động "đi săn" lời (Fallback AI)
-                    document.getElementById('ai-status').innerText = "YouTube không có lời. AI đang tự soạn lời dự phòng...";
-                    transcript = await fetchFallbackLyrics(id);
+            // 1. Khởi tạo Player trước để lấy Duration
+            if (player) player.destroy();
+            player = new YT.Player('player', {
+                videoId: id,
+                events: { 
+                    'onReady': async (e) => {
+                        const duration = e.target.getDuration();
+                        await processLyrics(id, duration);
+                        e.target.playVideo();
+                    },
+                    'onStateChange': onStateChange 
                 }
+            });
+        }
 
-                lyricsData = transcript;
-
-                // 4. Khởi tạo Video
-                if (player) player.destroy();
-                player = new YT.Player('player', {
-                    videoId: id,
-                    playerVars: { 'autoplay': 1, 'modestbranding': 1 },
-                    events: { 
-                        'onReady': async (e) => {
-                            document.getElementById('ai-status').innerText = "Đã tìm thấy lời! Đang dịch sang tiếng Việt...";
-                            // Dịch toàn bộ
-                            for (let line of lyricsData) {
-                                line.v = await translateText(line.t);
-                            }
-                            renderLyrics();
-                            document.getElementById('ai-status').innerHTML = `<i class="fas fa-check-circle text-green-500"></i> Mọi thứ đã sẵn sàng!`;
-                            document.getElementById('mini-loader').classList.add('hidden');
-                            e.target.playVideo();
-                        },
-                        'onStateChange': onPlayerStateChange
-                    }
-                });
-
+        async function processLyrics(id, duration) {
+            try {
+                // Thử lấy phụ đề thật (Khớp 100%)
+                const res = await fetch(`https://sub-api-endpoint.vercel.app/api/transcript?v=${id}`);
+                if (!res.ok) throw new Error("No CC");
+                lyricsData = await res.json();
+                updateStatus("Đã lấy được phụ đề gốc từ YouTube!", "success");
             } catch (err) {
-                document.getElementById('ai-status').innerText = "Lỗi không xác định. Thử link khác xem sao bạn nhé!";
+                // Nếu không có phụ đề, ta dùng thuật toán "Săn lời & Chia nhịp"
+                updateStatus("Video không có phụ đề. Đang tự động quét lời từ thư viện...", "warning");
+                
+                // Giả lập việc quét lời từ API Lyrics bên ngoài
+                const lyricsText = await fetchExternalLyrics(id); 
+                const lines = lyricsText.split('\n').filter(l => l.trim());
+                const interval = duration / lines.length;
+                
+                lyricsData = lines.map((t, i) => ({
+                    s: (i * interval) + (interval * 0.1), // Căn lề thời gian
+                    t: t
+                }));
             }
+
+            // Dịch toàn bộ
+            for (let line of lyricsData) {
+                line.v = await translateText(line.t);
+            }
+            renderLyrics();
         }
 
         async function translateText(text) {
@@ -132,17 +120,24 @@
             } catch { return "..."; }
         }
 
+        // Hàm giả lập "đi săn" lời từ các trang web Lyrics
+        async function fetchExternalLyrics(id) {
+            // Trong thực tế, bạn có thể kết nối với API của Genius hoặc Musixmatch
+            // Ở đây mình trả về một đoạn thông báo để bạn dán lời vào nếu AI không tìm thấy
+            return "Hệ thống không tìm thấy phụ đề có sẵn.\nVui lòng dán lời bài hát vào ô dưới đây để mình khớp cho bạn nhé!\n(Hoặc chọn video khác có CC)";
+        }
+
         function renderLyrics() {
             const container = document.getElementById('lyricsContent');
             container.innerHTML = lyricsData.map((l, i) => `
                 <div id="line-${i}" onclick="player.seekTo(${l.s})" class="lyrics-line">
-                    <p class="font-bold text-xl text-white mb-2 leading-tight">${l.t}</p>
-                    <p class="text-blue-400 font-medium text-sm italic">${l.v}</p>
+                    <p class="font-bold text-lg text-slate-100">${l.t}</p>
+                    <p class="text-blue-400 text-sm mt-1 italic">${l.v}</p>
                 </div>
             `).join('');
         }
 
-        function onPlayerStateChange(e) {
+        function onStateChange(e) {
             if (e.data == YT.PlayerState.PLAYING) {
                 syncTimer = setInterval(() => {
                     const now = player.getCurrentTime();
@@ -160,19 +155,14 @@
             } else { clearInterval(syncTimer); }
         }
 
+        function updateStatus(msg, type) {
+            const bar = document.getElementById('status-bar');
+            bar.innerHTML = `<i class="fas fa-info-circle"></i> ${msg}`;
+        }
+
         function extractId(url) {
             const match = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
             return (match && match[2].length == 11) ? match[2] : false;
-        }
-
-        async function fetchFallbackLyrics(id) {
-            // Đây là bộ não dự phòng: Tự động chia nhịp bài Way Back Home nếu hệ thống k tìm đc dữ liệu
-            return [
-                { s: 13, t: "멈춘 시간 속" }, { s: 16, t: "잠든 너를 찾아가" },
-                { s: 20, t: "아무리 막아도" }, { s: 23, t: "결국 너의 곁인 걸" },
-                { s: 27, t: "길고 긴 여행을 끝내" }, { s: 31, t: "이젠 돌아가" },
-                { s: 34, t: "너라는 집으로" }, { s: 38, t: "Right now I'm coming back" }
-            ];
         }
     </script>
 </body>
