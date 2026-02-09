@@ -3,43 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoPro - Anti Freeze</title>
+    <title>LingoPro - Khớp Từ Tuyệt Đối</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/korean-romanization@1.0.11/dist/korean-romanization.min.js"></script>
     <style>
         body { background: #fafafa; color: #1e293b; font-family: system-ui, sans-serif; }
-        .word-wrapper { display: inline-flex; flex-direction: column; margin: 0 8px 15px 0; cursor: pointer; vertical-align: top; }
-        .word-hangul { font-size: 1.4rem; font-weight: 600; color: #334155; }
-        .word-romaji { font-size: 0.75rem; color: transparent; margin-top: 2px; height: 1em; transition: 0.2s; text-align: left; }
+        .word-wrapper { 
+            display: inline-flex; flex-direction: column; 
+            margin: 0 8px 15px 0; cursor: pointer; vertical-align: top;
+        }
+        .word-hangul { font-size: 1.4rem; font-weight: 600; color: #334155; transition: 0.2s; }
+        .word-romaji { font-size: 0.75rem; color: transparent; margin-top: 2px; height: 1em; }
         
-        .word-wrapper.active .word-hangul { color: #ef4444 !important; }
+        /* Hiệu ứng khi nhấn */
+        .word-wrapper.active .word-hangul { color: #ef4444 !important; font-weight: 800; }
         .word-wrapper.active .word-romaji { color: #94a3b8 !important; }
-        .vi-word.highlight-red { color: #ef4444 !important; font-weight: 800; }
 
-        .lyric-card { background: white; padding: 2rem; border-radius: 1.5rem; margin-bottom: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .loading-text { color: #94a3b8; font-size: 0.8rem; font-style: italic; }
+        /* Nghĩa của từ riêng lẻ */
+        #word-meaning-popup {
+            color: #ef4444; font-weight: 800; font-size: 1.1rem;
+            min-height: 1.5rem; margin-bottom: 5px;
+        }
+
+        .lyric-card { 
+            background: white; padding: 2rem; border-radius: 1.5rem; 
+            margin-bottom: 1rem; border: 1px solid #f1f5f9; 
+        }
+        .vi-full-line { color: #64748b; font-size: 0.95rem; font-style: italic; }
     </style>
 </head>
 <body class="p-4 lg:p-10">
 
     <div class="max-w-7xl mx-auto">
-        <header class="mb-8">
-            <h1 class="text-2xl font-black text-slate-800">LINGO<span class="text-red-500">PRO</span></h1>
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-2xl font-black text-slate-800 tracking-tighter">LINGO<span class="text-red-500">PRO</span></h1>
+            <div id="word-meaning-popup" class="italic">Chạm vào từ để xem nghĩa...</div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-4">
                 <div class="aspect-video bg-black rounded-[1.5rem] overflow-hidden shadow-xl" id="player"></div>
                 <div class="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
-                    <input type="text" id="videoUrl" value="https://www.youtube.com/watch?v=LmBYPXGqtss" class="w-full mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none">
-                    <textarea id="rawLyrics" rows="5" placeholder="Dán lời tiếng Hàn vào đây..." class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none text-sm"></textarea>
+                    <input type="text" id="videoUrl" placeholder="Dán link YouTube..." class="w-full mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none">
+                    <textarea id="rawLyrics" rows="5" placeholder="Dán lời tiếng Hàn..." class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none text-sm"></textarea>
                     <button onclick="startApp()" class="w-full mt-2 bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all">PHÂN TÍCH LỜI</button>
                 </div>
             </div>
 
             <div id="lyricsContainer" class="h-[700px] overflow-y-auto pr-2">
-                <div class="text-center py-20 text-slate-300">Dán lời bài hát và nhấn nút để bắt đầu.</div>
-            </div>
+                </div>
         </div>
     </div>
 
@@ -52,79 +64,60 @@
             const text = document.getElementById('rawLyrics').value;
             const videoId = extractId(url);
 
-            if (!videoId || !text.trim()) {
-                alert("Bạn ơi, hãy nhập đủ link YouTube và lời bài hát nhé!");
-                return;
-            }
+            if (!videoId || !text.trim()) return;
 
-            // Load Video
-            if (player) {
-                player.loadVideoById(videoId);
-            } else {
-                player = new YT.Player('player', { videoId: videoId });
-            }
+            if (player) { player.loadVideoById(videoId); } 
+            else { player = new YT.Player('player', { videoId: videoId }); }
 
-            // Xử lý lời ngay lập tức (không đợi dịch)
             const lines = text.split('\n').filter(l => l.trim());
             const container = document.getElementById('lyricsContainer');
             
             container.innerHTML = lines.map((line, i) => {
                 const words = line.split(/\s+/);
-                const wordHtml = words.map((w, j) => {
-                    let romaji = "";
-                    try { 
-                        // Kiểm tra nếu thư viện kroman đã load thành công
-                        romaji = (typeof kroman !== 'undefined') ? kroman.parse(w) : "..."; 
-                    } catch(e) { romaji = "..."; }
-
-                    return `
-                    <div class="word-wrapper" onclick="handleHighlight(${i}, ${j})">
+                const wordHtml = words.map((w, j) => `
+                    <div class="word-wrapper" onclick="getPreciseMeaning(this, '${w}')">
                         <span class="word-hangul">${w}</span>
-                        <span class="word-romaji">${romaji}</span>
-                    </div>`;
-                }).join('');
+                        <span class="word-romaji">${typeof kroman !== 'undefined' ? kroman.parse(w) : '...'}</span>
+                    </div>`).join('');
 
                 return `
-                <div class="lyric-card" id="card-${i}">
+                <div class="lyric-card">
                     <div class="flex flex-wrap">${wordHtml}</div>
-                    <div class="mt-4 pt-3 border-t border-slate-50 text-blue-600 font-medium vi-area" id="vi-${i}">
-                        <span class="loading-text">Đang dịch nghĩa...</span>
-                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-50 vi-full-line" id="vi-full-${i}">Đang dịch cả câu...</div>
                 </div>`;
             }).join('');
 
-            // Gọi hàm dịch sau khi đã dựng xong giao diện
-            lines.forEach((line, i) => translateLine(line, i));
+            lines.forEach((line, i) => translateFullLine(line, i));
         }
 
-        async function translateLine(text, idx) {
+        // Dịch cả câu để làm phụ đề mờ bên dưới
+        async function translateFullLine(text, idx) {
             try {
                 const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(text)}`);
                 const data = await res.json();
-                const translatedText = data[0][0][0];
-                const words = translatedText.split(/\s+/);
-                
-                document.getElementById(`vi-${idx}`).innerHTML = words.map(w => `<span class="vi-word">${w}</span>`).join(' ');
-            } catch (e) {
-                document.getElementById(`vi-${idx}`).innerText = "Không thể dịch câu này.";
-            }
+                document.getElementById(`vi-full-${idx}`).innerText = data[0][0][0];
+            } catch (e) { document.getElementById(`vi-full-${idx}`).innerText = ""; }
         }
 
-        function handleHighlight(lineIdx, wordIdx) {
-            // Xóa highlight cũ
+        // DỊCH RIÊNG LẺ TỪNG TỪ KHI CLICK (CHÍNH XÁC 100%)
+        async function getPreciseMeaning(element, word) {
+            // Reset highlight
             document.querySelectorAll('.word-wrapper').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.vi-word').forEach(el => el.classList.remove('highlight-red'));
+            element.classList.add('active');
 
-            // Highlight từ Hàn
-            const card = document.getElementById(`card-${lineIdx}`);
-            const words = card.querySelectorAll('.word-wrapper');
-            if(words[wordIdx]) words[wordIdx].classList.add('active');
+            const popup = document.getElementById('word-meaning-popup');
+            popup.innerText = "Đang tra...";
 
-            // Highlight từ Việt tương ứng
-            const viWords = card.querySelectorAll('.vi-word');
-            if(viWords.length > 0) {
-                const targetIdx = Math.floor((wordIdx / words.length) * viWords.length);
-                if(viWords[targetIdx]) viWords[targetIdx].classList.add('highlight-red');
+            try {
+                // Gọi API dịch đúng duy nhất từ đó
+                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=vi&dt=t&q=${encodeURI(word)}`);
+                const data = await res.json();
+                const meaning = data[0][0][0];
+                
+                // Hiển thị nghĩa In Đỏ lên header
+                popup.innerHTML = `<i class="fas fa-arrow-right text-xs"></i> ${meaning.toUpperCase()}`;
+            } catch (e) {
+                popup.innerText = "Lỗi tra từ";
             }
         }
 
