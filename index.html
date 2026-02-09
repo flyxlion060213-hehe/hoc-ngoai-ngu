@@ -3,64 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoPro - Rainbow Mode</title>
+    <title>LingoPro - Rainbow Card Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/korean-romanization@1.0.11/dist/korean-romanization.min.js"></script>
     <style>
-        body { background: #f8fafc; font-family: 'Inter', sans-serif; }
-        .card { background: white; border-radius: 2rem; padding: 2rem; border: 1px solid #e2e8f0; transition: 0.3s; }
+        body { background: #334155; font-family: 'Inter', sans-serif; padding: 20px; }
+        .main-container { max-width: 1200px; margin: auto; }
         
-        /* Cấu trúc từ Hàn */
-        .word-box { display: inline-flex; flex-direction: column; align-items: center; margin-right: 12px; margin-bottom: 8px; cursor: pointer; }
-        .ko-txt { font-size: 1.4rem; font-weight: 800; }
-        .ko-rom { font-size: 0.7rem; color: #94a3b8; margin-top: -2px; }
+        /* Lyric Card Style giống ảnh */
+        .lyric-card { 
+            background: #f8fafc; border-radius: 24px; padding: 24px; margin-bottom: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        
+        /* Chữ Hàn */
+        .ko-item { display: inline-flex; flex-direction: column; align-items: center; margin-right: 15px; transition: 0.3s; }
+        .ko-text { font-size: 1.8rem; font-weight: 800; color: #1e293b; }
+        .ko-rom { font-size: 0.8rem; color: #94a3b8; }
 
-        /* Nghĩa tiếng Việt */
-        .vi-txt { font-weight: 700; font-size: 1rem; margin-right: 10px; cursor: pointer; transition: 0.2s; border-bottom: 2px solid transparent; }
-        .vi-txt:hover { border-bottom-color: currentColor; }
+        /* Viên thuốc nghĩa Việt & Từ gần nghĩa */
+        .pill { 
+            display: inline-block; padding: 8px 16px; margin: 4px; 
+            border-radius: 999px; font-weight: 700; font-size: 0.9rem;
+            cursor: pointer; transition: 0.3s; background: #e2e8f0; color: #475569;
+        }
+        .synonym-pill { border: 2px dashed transparent; }
 
         /* Quiz Popup */
-        #quiz-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .quiz-box { background: white; width: 450px; padding: 3rem; border-radius: 3rem; text-align: center; }
-        .opt-btn { width: 100%; padding: 14px; margin-top: 10px; border: 2px solid #f1f5f9; border-radius: 15px; font-weight: 700; cursor: pointer; }
-        .correct { background: #dcfce7 !important; border-color: #22c55e !important; color: #166534; }
-        .wrong { background: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b; }
+        #quiz-overlay { 
+            display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.95); 
+            z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(10px); 
+        }
+        .quiz-box { background: white; width: 500px; padding: 40px; border-radius: 40px; text-align: center; }
+        .opt-btn { width: 100%; padding: 15px; margin-top: 10px; border: 2px solid #f1f5f9; border-radius: 15px; font-weight: 800; }
+        
+        .active-pill { color: white !important; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
 </head>
-<body class="p-4 lg:p-10">
+<body>
 
-    <div class="max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-black italic tracking-tighter">LINGO<span class="text-red-500">PRO</span></h1>
-            <button onclick="startQuiz()" class="bg-slate-900 text-white px-8 py-3 rounded-full font-black shadow-xl hover:scale-105 transition">⚡ THI 10 CÂU / 5P</button>
+    <div class="main-container">
+        <header class="flex justify-between items-center mb-10 bg-white p-6 rounded-3xl shadow-lg">
+            <h1 class="text-4xl font-black tracking-tighter italic">LINGO<span class="text-red-500">PRO</span></h1>
+            <button onclick="startQuiz()" class="bg-red-500 text-white px-10 py-3 rounded-full font-black shadow-lg hover:bg-red-600 transition">⚡ THI 10 CÂU / 5P</button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div class="space-y-4">
-                <div class="aspect-video bg-black rounded-[2.5rem] overflow-hidden shadow-2xl" id="player"></div>
-                <div class="card space-y-4">
-                    <input type="text" id="yt-url" placeholder="Dán link YouTube..." class="w-full p-4 bg-slate-50 rounded-2xl outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-red-400">
-                    <textarea id="lyrics-in" rows="4" placeholder="Dán lời tiếng Hàn..." class="w-full p-4 bg-slate-50 rounded-2xl outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-red-400"></textarea>
-                    <button onclick="buildRainbow()" class="w-full bg-red-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg">Nạp Bài Học Màu Sắc</button>
+            <div class="space-y-6">
+                <div class="aspect-video bg-black rounded-[40px] overflow-hidden shadow-2xl" id="player"></div>
+                <div class="bg-white p-8 rounded-[40px] shadow-lg">
+                    <input type="text" id="yt-url" placeholder="Link Youtube..." class="w-full mb-4 p-4 bg-slate-50 rounded-2xl outline-none ring-1 ring-slate-200">
+                    <textarea id="lyric-in" rows="4" placeholder="Dán lời tiếng Hàn..." class="w-full p-4 bg-slate-50 rounded-2xl outline-none ring-1 ring-slate-200"></textarea>
+                    <button onclick="loadApp()" class="w-full mt-4 bg-red-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg">Nạp Bài Học Màu Sắc</button>
                 </div>
             </div>
-            <div id="display-container" class="h-[700px] overflow-y-auto pr-2 space-y-4"></div>
+            <div id="lyric-list" class="h-[800px] overflow-y-auto pr-4"></div>
         </div>
     </div>
 
     <div id="quiz-overlay">
         <div class="quiz-box">
-            <div class="flex justify-between mb-6 items-center">
-                <span id="q-progress" class="font-bold text-slate-300">Câu 1/10</span>
-                <span id="q-timer" class="text-red-500 font-black text-xl">05:00</span>
+            <div class="flex justify-between mb-8 items-center">
+                <span id="q-prog" class="font-black text-slate-300">Câu 1/10</span>
+                <span id="q-timer" class="bg-red-50 text-red-500 px-4 py-1 rounded-xl font-black">05:00</span>
             </div>
-            <div id="q-content">
-                <h2 id="q-word" class="text-6xl font-black text-slate-800 mb-10">...</h2>
-                <div id="q-options" class="space-y-3"></div>
+            <div id="q-main">
+                <h2 id="q-word" class="text-7xl font-black text-slate-800 mb-10">...</h2>
+                <div id="q-opts" class="space-y-3"></div>
             </div>
-            <div id="q-result" class="hidden">
-                <div class="text-8xl font-black text-red-500 mb-6"><span id="score">0</span>/10</div>
-                <button onclick="location.reload()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black">HỌC LẠI BÀI MỚI</button>
+            <div id="q-res" class="hidden">
+                <div class="text-9xl font-black text-red-500 mb-8"><span id="score">0</span><small class="text-2xl text-slate-300">/10</small></div>
+                <button onclick="location.reload()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black">LÀM BÀI MỚI</button>
             </div>
         </div>
     </div>
@@ -68,91 +81,90 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let player, quizData = [], qIdx = 0, score = 0, timer;
-        const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+        const colors = ['#f87171', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa', '#f472b6', '#22d3ee', '#fb923c'];
+        
+        // Giả lập từ gần nghĩa
+        const syns = {"chúc mừng": "chúc tụng", "điên cuồng": "hết mình", "hoa nở": "khai hoa", "đẹp hơn": "xinh thêm", "yêu": "thương", "ma thuật": "thần kỳ"};
 
-        function buildRainbow() {
-            const url = document.getElementById('yt-url').value;
-            const text = document.getElementById('lyrics-in').value;
-            const id = extractId(url);
-            if (!id || !text) return;
+        function loadApp() {
+            const id = extractId(document.getElementById('yt-url').value);
+            const text = document.getElementById('lyric-in').value;
+            if(!id || !text) return;
 
-            if (player) player.loadVideoById(id); else player = new YT.Player('player', { videoId: id });
+            if(player) player.loadVideoById(id); else player = new YT.Player('player', {videoId: id});
 
             const lines = text.split('\n').filter(l => l.trim());
-            const container = document.getElementById('display-container');
-            container.innerHTML = "";
+            const list = document.getElementById('lyric-list');
+            list.innerHTML = "";
 
             lines.forEach((line, i) => {
                 const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `<div id="ko-line-${i}" class="mb-4"></div><div id="vi-line-${i}" class="pt-4 border-t border-slate-50"></div>`;
-                container.appendChild(card);
-                processLine(line, i);
+                card.className = 'lyric-card';
+                card.innerHTML = `<div id="ko-${i}" class="mb-6"></div><div id="vi-${i}" class="border-t pt-4"></div>`;
+                list.appendChild(card);
+                renderLine(line, i);
             });
         }
 
-        async function processLine(line, idx) {
+        async function renderLine(line, idx) {
+            // Render tiếng Hàn
+            const koDiv = document.getElementById(`ko-${idx}`);
+            line.split(/\s+/).forEach((w, k) => {
+                const rom = typeof kroman !== 'undefined' ? kroman.parse(w) : '';
+                koDiv.innerHTML += `<div class="ko-item" id="ko-w-${idx}-${k}"><span class="ko-text">${w}</span><span class="ko-rom">${rom}</span></div>`;
+            });
+
+            // Dịch & Phân tích nghĩa + Từ đồng nghĩa
             const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=vi&dt=t&q=${encodeURI(line)}`);
             const data = await res.json();
-            const fullVi = data[0][0][0];
+            const words = data[0][0][0].split(/\s+/);
+            const viDiv = document.getElementById(`vi-${idx}`);
 
-            // Gom cụm thông minh: Từ đầu riêng, các từ sau đi kèm bổ trợ (nở, hơn, yêu, ...)
-            let rawVi = fullVi.split(/\s+/);
-            let viPills = [rawVi[0]];
-            const actionWords = ["nở", "hơn", "là", "đã", "đang", "yêu", "đi", "lắm", "quá"];
-
-            for (let i = 1; i < rawVi.length; i++) {
-                if (rawVi[i+1] && actionWords.includes(rawVi[i+1].toLowerCase())) {
-                    viPills.push(rawVi[i] + " " + rawVi[i+1]);
-                    i++;
-                } else { viPills.push(rawVi[i]); }
-            }
-
-            // Render Nghĩa Việt với màu sắc
-            const viContainer = document.getElementById(`vi-line-${idx}`);
-            viPills.forEach((word, pIdx) => {
-                const color = colors[pIdx % colors.length];
-                viContainer.innerHTML += `<span class="vi-txt" style="color: ${color}" onclick="addToQuiz('${word}', ${idx}, '${color}')">${word}</span>`;
-            });
-
-            // Render Chữ Hàn (Tạm thời màu đen, sẽ đổi màu khi nhấn hoặc tự động khớp)
-            const koWords = line.split(/\s+/);
-            const koContainer = document.getElementById(`ko-line-${idx}`);
-            koWords.forEach((kw, kIdx) => {
-                const rom = typeof kroman !== 'undefined' ? kroman.parse(kw) : '';
-                koContainer.innerHTML += `
-                    <div class="word-box" id="ko-${idx}-${kIdx}">
-                        <span class="ko-txt">${kw}</span>
-                        <span class="ko-rom">${rom}</span>
-                    </div>`;
+            words.forEach((w, wIdx) => {
+                const color = colors[wIdx % colors.length];
+                const syn = syns[w.toLowerCase()] || "";
+                
+                // Nghĩa chính
+                viDiv.innerHTML += `<span class="pill" id="pill-main-${idx}-${wIdx}" onclick="syncColor('${w}', ${idx}, '${color}', 'pill-main-${idx}-${wIdx}')">${w}</span>`;
+                // Từ đồng nghĩa (Tô cùng màu với từ đã dịch)
+                if(syn) {
+                    viDiv.innerHTML += `<span class="pill synonym-pill" id="pill-syn-${idx}-${wIdx}" onclick="syncColor('${w}', ${idx}, '${color}', 'pill-syn-${idx}-${wIdx}')">${syn}</span>`;
+                }
             });
         }
 
-        async function addToQuiz(vi, lineIdx, color) {
+        async function syncColor(vi, lineIdx, color, pillId) {
+            // Hiệu ứng bừng sáng màu sắc cho viên thuốc
+            const pill = document.getElementById(pillId);
+            pill.style.background = color;
+            pill.classList.add('active-pill');
+
             const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=ko&dt=t&q=${encodeURI(vi)}`);
             const data = await res.json();
             const ko = data[0][0][0];
 
-            // Khớp màu chữ Hàn tương ứng
-            document.querySelectorAll(`#ko-line-${lineIdx} .ko-txt`).forEach(el => {
-                if(ko.includes(el.innerText) || el.innerText.includes(ko)) el.style.color = color;
+            // Tìm và tô màu cùng tông cho chữ Hangul
+            document.querySelectorAll(`#ko-${lineIdx} .ko-text`).forEach(el => {
+                if(ko.includes(el.innerText) || el.innerText.includes(ko)) {
+                    el.style.color = color;
+                    el.style.transform = "scale(1.2)";
+                }
             });
 
             if(!quizData.find(q => q.ko === ko)) quizData.push({ko, vi});
         }
 
         function startQuiz() {
-            if(quizData.length < 5) return alert("Hãy chạm vào các từ tiếng Việt màu sắc để hệ thống lưu bài học trước!");
+            if(quizData.length < 5) return alert("Nhấn vào các ô màu sắc để nạp bài học trước!");
             currentQuiz = [...quizData].sort(() => 0.5 - Math.random()).slice(0, 10);
             score = 0; qIdx = 0;
             document.getElementById('quiz-overlay').style.display = 'flex';
-            runTimer(300);
-            showQ();
+            runTimer(300); showQ();
         }
 
         function showQ() {
             if(qIdx >= currentQuiz.length) return end();
-            document.getElementById('q-progress').innerText = `Câu ${qIdx+1}/${currentQuiz.length}`;
+            document.getElementById('q-prog').innerText = `Câu ${qIdx+1}/10`;
             const q = currentQuiz[qIdx];
             document.getElementById('q-word').innerText = q.ko;
             let opts = [q.vi];
@@ -161,15 +173,15 @@
                 if(!opts.includes(r)) opts.push(r);
             }
             opts.sort(() => 0.5 - Math.random());
-            document.getElementById('q-options').innerHTML = opts.map(o => `<button class="opt-btn" onclick="check(this,'${o}','${q.vi}')">${o}</button>`).join('');
+            document.getElementById('q-opts').innerHTML = opts.map(o => `<button class="opt-btn bg-white hover:bg-slate-50" onclick="check(this,'${o}','${q.vi}')">${o}</button>`).join('');
         }
 
         function check(btn, s, c) {
             const btns = document.querySelectorAll('.opt-btn');
             btns.forEach(b => b.style.pointerEvents = 'none');
-            if(s === c) { btn.classList.add('correct'); score++; }
-            else { btn.classList.add('wrong'); btns.forEach(b => { if(b.innerText === c) b.classList.add('correct'); }); }
-            setTimeout(() => { qIdx++; showQ(); }, 1000);
+            if(s === c) { btn.classList.add('bg-green-500', 'text-white'); score++; }
+            else { btn.classList.add('bg-red-500', 'text-white'); btns.forEach(b => { if(b.innerText === c) b.classList.add('bg-green-500', 'text-white'); }); }
+            setTimeout(() => { qIdx++; showQ(); }, 1200);
         }
 
         function runTimer(sec) {
@@ -183,8 +195,8 @@
 
         function end() {
             clearInterval(timer);
-            document.getElementById('q-content').classList.add('hidden');
-            document.getElementById('q-result').classList.remove('hidden');
+            document.getElementById('q-main').classList.add('hidden');
+            document.getElementById('q-res').classList.remove('hidden');
             document.getElementById('score').innerText = score;
         }
 
