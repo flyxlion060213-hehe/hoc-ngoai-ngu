@@ -3,47 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoPro - Fast Mode</title>
+    <title>LingoPro - Anti Freeze</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/korean-romanization@1.0.11/dist/korean-romanization.min.js"></script>
     <style>
-        body { background: #fafafa; color: #1e293b; font-family: system-ui, -apple-system, sans-serif; }
-        .word-wrapper { display: inline-flex; flex-direction: column; margin: 0 6px 12px 0; cursor: pointer; }
-        .word-hangul { font-size: 1.3rem; font-weight: 600; color: #334155; transition: 0.2s; }
-        .word-romaji { font-size: 0.7rem; color: transparent; margin-top: -2px; transition: 0.2s; }
+        body { background: #fafafa; color: #1e293b; font-family: system-ui, sans-serif; }
+        .word-wrapper { display: inline-flex; flex-direction: column; margin: 0 8px 15px 0; cursor: pointer; vertical-align: top; }
+        .word-hangul { font-size: 1.4rem; font-weight: 600; color: #334155; }
+        .word-romaji { font-size: 0.75rem; color: transparent; margin-top: 2px; height: 1em; transition: 0.2s; text-align: left; }
         
-        .word-wrapper.active .word-hangul { color: #ef4444 !important; font-weight: 800; }
+        .word-wrapper.active .word-hangul { color: #ef4444 !important; }
         .word-wrapper.active .word-romaji { color: #94a3b8 !important; }
-
-        .vi-line { color: #2563eb; font-size: 0.9rem; font-weight: 500; min-height: 1.2em; }
         .vi-word.highlight-red { color: #ef4444 !important; font-weight: 800; }
 
-        .lyric-card { background: white; padding: 1.5rem 2rem; border-radius: 1.5rem; margin-bottom: 1rem; border: 1px solid #f1f5f9; }
-        .loading-dots:after { content: ' .'; animation: dots 1s steps(5, end) infinite; }
-        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #94a3b8; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #94a3b8, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #94a3b8, .5em 0 0 #94a3b8; } }
+        .lyric-card { background: white; padding: 2rem; border-radius: 1.5rem; margin-bottom: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .loading-text { color: #94a3b8; font-size: 0.8rem; font-style: italic; }
     </style>
 </head>
 <body class="p-4 lg:p-10">
 
     <div class="max-w-7xl mx-auto">
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-black text-slate-800 tracking-tighter">LINGO<span class="text-red-500">PRO</span></h1>
-            <span class="text-[10px] font-bold text-slate-400 border px-3 py-1 rounded-full">FAST MODE</span>
+        <header class="mb-8">
+            <h1 class="text-2xl font-black text-slate-800">LINGO<span class="text-red-500">PRO</span></h1>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-4">
-                <div class="aspect-video bg-black rounded-[1.5rem] overflow-hidden shadow-xl"><div id="player"></div></div>
+                <div class="aspect-video bg-black rounded-[1.5rem] overflow-hidden shadow-xl" id="player"></div>
                 <div class="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
-                    <input type="text" id="videoUrl" placeholder="Link YouTube..." class="w-full mb-3 p-3 bg-slate-50 rounded-xl outline-none border border-slate-200 focus:ring-1 focus:ring-red-400">
-                    <textarea id="rawLyrics" rows="4" placeholder="Dán lời tiếng Hàn..." class="w-full p-3 bg-slate-50 rounded-xl outline-none border border-slate-200 focus:ring-1 focus:ring-red-400 text-sm"></textarea>
-                    <button onclick="quickBuild()" class="w-full mt-3 bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-black transition-all">BẮT ĐẦU</button>
+                    <input type="text" id="videoUrl" value="https://www.youtube.com/watch?v=LmBYPXGqtss" class="w-full mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none">
+                    <textarea id="rawLyrics" rows="5" placeholder="Dán lời tiếng Hàn vào đây..." class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none text-sm"></textarea>
+                    <button onclick="startApp()" class="w-full mt-2 bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all">PHÂN TÍCH LỜI</button>
                 </div>
             </div>
 
-            <div id="lyricsContainer" class="h-[700px] overflow-y-auto pr-2 space-y-2">
-                <div class="text-center py-20 opacity-20 italic font-medium">Nạp lời để bắt đầu...</div>
+            <div id="lyricsContainer" class="h-[700px] overflow-y-auto pr-2">
+                <div class="text-center py-20 text-slate-300">Dán lời bài hát và nhấn nút để bắt đầu.</div>
             </div>
         </div>
     </div>
@@ -52,55 +47,85 @@
     <script>
         let player;
 
-        async function quickBuild() {
-            const id = extractId(document.getElementById('videoUrl').value);
-            const lines = document.getElementById('rawLyrics').value.split('\n').filter(l => l.trim());
-            if (!id || !lines.length) return;
+        function startApp() {
+            const url = document.getElementById('videoUrl').value;
+            const text = document.getElementById('rawLyrics').value;
+            const videoId = extractId(url);
 
-            // 1. Hiện khung xương bài hát ngay lập tức
+            if (!videoId || !text.trim()) {
+                alert("Bạn ơi, hãy nhập đủ link YouTube và lời bài hát nhé!");
+                return;
+            }
+
+            // Load Video
+            if (player) {
+                player.loadVideoById(videoId);
+            } else {
+                player = new YT.Player('player', { videoId: videoId });
+            }
+
+            // Xử lý lời ngay lập tức (không đợi dịch)
+            const lines = text.split('\n').filter(l => l.trim());
             const container = document.getElementById('lyricsContainer');
+            
             container.innerHTML = lines.map((line, i) => {
-                const words = line.split(/\s+/).map((w, j) => `
-                    <div class="word-wrapper" onclick="showInfo(${i}, ${j})">
+                const words = line.split(/\s+/);
+                const wordHtml = words.map((w, j) => {
+                    let romaji = "";
+                    try { 
+                        // Kiểm tra nếu thư viện kroman đã load thành công
+                        romaji = (typeof kroman !== 'undefined') ? kroman.parse(w) : "..."; 
+                    } catch(e) { romaji = "..."; }
+
+                    return `
+                    <div class="word-wrapper" onclick="handleHighlight(${i}, ${j})">
                         <span class="word-hangul">${w}</span>
-                        <span class="word-romaji">${kroman.parse(w)}</span>
-                    </div>`).join('');
-                return `
-                    <div class="lyric-card" id="card-${i}">
-                        <div class="flex flex-wrap">${words}</div>
-                        <div class="vi-line mt-2 pt-2 border-t border-slate-50" id="vi-${i}"><span class="loading-dots text-slate-300 italic text-xs">Đang dịch</span></div>
+                        <span class="word-romaji">${romaji}</span>
                     </div>`;
+                }).join('');
+
+                return `
+                <div class="lyric-card" id="card-${i}">
+                    <div class="flex flex-wrap">${wordHtml}</div>
+                    <div class="mt-4 pt-3 border-t border-slate-50 text-blue-600 font-medium vi-area" id="vi-${i}">
+                        <span class="loading-text">Đang dịch nghĩa...</span>
+                    </div>
+                </div>`;
             }).join('');
 
-            // 2. Chạy video luôn
-            if (player) player.destroy();
-            player = new YT.Player('player', { videoId: id });
-
-            // 3. Dịch từng câu một cách độc lập (Lazy Load)
-            lines.forEach((line, i) => translateLazy(line, i));
+            // Gọi hàm dịch sau khi đã dựng xong giao diện
+            lines.forEach((line, i) => translateLine(line, i));
         }
 
-        async function translateLazy(text, index) {
+        async function translateLine(text, idx) {
             try {
                 const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(text)}`);
                 const data = await res.json();
-                const viText = data[0][0][0];
-                const viSpans = viText.split(/\s+/).map((vw, k) => `<span class="vi-word line-${index}-vi">${vw}</span>`).join(' ');
-                document.getElementById(`vi-${index}`).innerHTML = viSpans;
-            } catch (e) { document.getElementById(`vi-${index}`).innerText = "..."; }
+                const translatedText = data[0][0][0];
+                const words = translatedText.split(/\s+/);
+                
+                document.getElementById(`vi-${idx}`).innerHTML = words.map(w => `<span class="vi-word">${w}</span>`).join(' ');
+            } catch (e) {
+                document.getElementById(`vi-${idx}`).innerText = "Không thể dịch câu này.";
+            }
         }
 
-        function showInfo(lineIdx, wordIdx) {
-            document.querySelectorAll(`.word-wrapper`).forEach(el => el.classList.remove('active'));
-            document.querySelectorAll(`.vi-word`).forEach(el => el.classList.remove('highlight-red'));
+        function handleHighlight(lineIdx, wordIdx) {
+            // Xóa highlight cũ
+            document.querySelectorAll('.word-wrapper').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.vi-word').forEach(el => el.classList.remove('highlight-red'));
 
-            const targetCard = document.getElementById(`card-${lineIdx}`);
-            targetCard.querySelectorAll('.word-wrapper')[wordIdx].classList.add('active');
+            // Highlight từ Hàn
+            const card = document.getElementById(`card-${lineIdx}`);
+            const words = card.querySelectorAll('.word-wrapper');
+            if(words[wordIdx]) words[wordIdx].classList.add('active');
 
-            const viWords = targetCard.querySelectorAll(`.vi-word`);
-            const wordsCount = targetCard.querySelectorAll('.word-wrapper').length;
-            const targetViIdx = Math.floor((wordIdx / wordsCount) * viWords.length);
-            if (viWords[targetViIdx]) viWords[targetViIdx].classList.add('highlight-red');
+            // Highlight từ Việt tương ứng
+            const viWords = card.querySelectorAll('.vi-word');
+            if(viWords.length > 0) {
+                const targetIdx = Math.floor((wordIdx / words.length) * viWords.length);
+                if(viWords[targetIdx]) viWords[targetIdx].classList.add('highlight-red');
+            }
         }
 
         function extractId(url) {
