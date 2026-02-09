@@ -3,124 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoPro - Khớp Từ Tuyệt Đối</title>
+    <title>LingoPro - Reverse Search & Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/korean-romanization@1.0.11/dist/korean-romanization.min.js"></script>
     <style>
-        body { background: #fafafa; color: #1e293b; font-family: system-ui, sans-serif; }
-        .word-wrapper { 
-            display: inline-flex; flex-direction: column; 
-            margin: 0 8px 15px 0; cursor: pointer; vertical-align: top;
-        }
-        .word-hangul { font-size: 1.4rem; font-weight: 600; color: #334155; transition: 0.2s; }
-        .word-romaji { font-size: 0.75rem; color: transparent; margin-top: 2px; height: 1em; }
+        body { background: #f8fafc; color: #1e293b; font-family: system-ui, sans-serif; }
+        .word-wrapper { display: inline-flex; flex-direction: column; margin: 0 4px 10px 0; cursor: pointer; border-radius: 8px; padding: 2px; }
+        .word-hangul { font-size: 1.25rem; font-weight: 600; transition: 0.2s; }
+        .word-romaji { font-size: 0.7rem; color: #94a3b8; margin-top: -2px; }
         
-        /* Hiệu ứng khi nhấn */
-        .word-wrapper.active .word-hangul { color: #ef4444 !important; font-weight: 800; }
-        .word-wrapper.active .word-romaji { color: #94a3b8 !important; }
+        /* Highlight khi tra ngược */
+        .highlight-korean { color: #ef4444 !important; transform: scale(1.1); font-weight: 800; }
+        
+        .vi-word { cursor: pointer; padding: 0 2px; transition: 0.2s; border-bottom: 1px dashed #cbd5e1; }
+        .vi-word:hover { color: #ef4444; border-bottom-color: #ef4444; }
 
-        /* Nghĩa của từ riêng lẻ */
-        #word-meaning-popup {
-            color: #ef4444; font-weight: 800; font-size: 1.1rem;
-            min-height: 1.5rem; margin-bottom: 5px;
-        }
-
-        .lyric-card { 
-            background: white; padding: 2rem; border-radius: 1.5rem; 
-            margin-bottom: 1rem; border: 1px solid #f1f5f9; 
-        }
-        .vi-full-line { color: #64748b; font-size: 0.95rem; font-style: italic; }
+        .lyric-card { background: white; padding: 1.5rem; border-radius: 1.2rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; }
+        
+        /* Quiz Styles */
+        #quiz-container { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .quiz-option { width: 100%; max-width: 400px; padding: 15px; margin: 5px; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; font-weight: 600; }
+        .quiz-option:hover { border-color: #3b82f6; background: #eff6ff; }
     </style>
 </head>
-<body class="p-4 lg:p-10">
+<body class="p-4 lg:p-8">
 
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-8 flex justify-between items-center">
-            <h1 class="text-2xl font-black text-slate-800 tracking-tighter">LINGO<span class="text-red-500">PRO</span></h1>
-            <div id="word-meaning-popup" class="italic">Chạm vào từ để xem nghĩa...</div>
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black text-slate-800 tracking-tighter">LINGO<span class="text-red-500">QUIZ</span></h1>
+            <button onclick="startQuiz()" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-red-600 transition">LÀM TRẮC NGHIỆM</button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="space-y-4">
-                <div class="aspect-video bg-black rounded-[1.5rem] overflow-hidden shadow-xl" id="player"></div>
-                <div class="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
-                    <input type="text" id="videoUrl" placeholder="Dán link YouTube..." class="w-full mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none">
-                    <textarea id="rawLyrics" rows="5" placeholder="Dán lời tiếng Hàn..." class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none text-sm"></textarea>
-                    <button onclick="startApp()" class="w-full mt-2 bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all">PHÂN TÍCH LỜI</button>
+                <div class="aspect-video bg-black rounded-2xl overflow-hidden" id="player"></div>
+                <div class="bg-white p-6 rounded-2xl border shadow-sm">
+                    <input type="text" id="videoUrl" placeholder="Link YouTube..." class="w-full mb-3 p-3 bg-slate-50 rounded-xl border outline-none focus:ring-1 focus:ring-red-400">
+                    <textarea id="rawLyrics" rows="4" placeholder="Dán lời tiếng Hàn..." class="w-full p-3 bg-slate-50 rounded-xl border outline-none text-sm"></textarea>
+                    <button onclick="processLyrics()" class="w-full mt-2 bg-slate-900 text-white py-3 rounded-xl font-bold">NẠP BÀI HỌC</button>
                 </div>
             </div>
 
-            <div id="lyricsContainer" class="h-[700px] overflow-y-auto pr-2">
+            <div id="lyricsContent" class="h-[650px] overflow-y-auto pr-2">
                 </div>
+        </div>
+    </div>
+
+    <div id="quiz-container">
+        <div id="quiz-content" class="w-full max-w-xl text-center">
+            <h2 class="text-3xl font-bold mb-8" id="quiz-question">Từ này nghĩa là gì?</h2>
+            <div id="quiz-word" class="text-5xl font-black text-red-500 mb-10">...</div>
+            <div id="quiz-options" class="flex flex-col items-center"></div>
+            <button onclick="closeQuiz()" class="mt-10 text-slate-400 underline">Thoát trắc nghiệm</button>
         </div>
     </div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        let player;
+        let player, quizData = [];
 
-        function startApp() {
+        function processLyrics() {
             const url = document.getElementById('videoUrl').value;
             const text = document.getElementById('rawLyrics').value;
-            const videoId = extractId(url);
+            const id = extractId(url);
+            if (!id || !text) return;
 
-            if (!videoId || !text.trim()) return;
-
-            if (player) { player.loadVideoById(videoId); } 
-            else { player = new YT.Player('player', { videoId: videoId }); }
+            if (player) player.loadVideoById(id);
+            else player = new YT.Player('player', { videoId: id });
 
             const lines = text.split('\n').filter(l => l.trim());
-            const container = document.getElementById('lyricsContainer');
+            const container = document.getElementById('lyricsContent');
+            container.innerHTML = "";
+            quizData = []; // Reset dữ liệu trắc nghiệm
+
+            lines.forEach((line, i) => {
+                const card = document.createElement('div');
+                card.className = 'lyric-card';
+                card.innerHTML = `
+                    <div class="flex flex-wrap mb-4" id="ko-line-${i}"></div>
+                    <div class="vi-line text-slate-500 pt-3 border-t border-slate-50" id="vi-line-${i}">Đang dịch...</div>
+                `;
+                container.appendChild(card);
+                renderLine(line, i);
+            });
+        }
+
+        async function renderLine(line, i) {
+            const words = line.split(/\s+/);
+            const koContainer = document.getElementById(`ko-line-${i}`);
             
-            container.innerHTML = lines.map((line, i) => {
-                const words = line.split(/\s+/);
-                const wordHtml = words.map((w, j) => `
-                    <div class="word-wrapper" onclick="getPreciseMeaning(this, '${w}')">
-                        <span class="word-hangul">${w}</span>
-                        <span class="word-romaji">${typeof kroman !== 'undefined' ? kroman.parse(w) : '...'}</span>
-                    </div>`).join('');
+            // Render từ Hàn
+            words.forEach((w, j) => {
+                const romaji = typeof kroman !== 'undefined' ? kroman.parse(w) : '';
+                koContainer.innerHTML += `
+                    <div class="word-wrapper" id="ko-${i}-${j}">
+                        <span class="word-hangul text-slate-700">${w}</span>
+                        <span class="word-romaji">${romaji}</span>
+                    </div>`;
+            });
 
-                return `
-                <div class="lyric-card">
-                    <div class="flex flex-wrap">${wordHtml}</div>
-                    <div class="mt-4 pt-3 border-t border-slate-50 vi-full-line" id="vi-full-${i}">Đang dịch cả câu...</div>
-                </div>`;
-            }).join('');
+            // Dịch và Render từ Việt (để tra ngược)
+            try {
+                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=vi&dt=t&q=${encodeURI(line)}`);
+                const data = await res.json();
+                const viText = data[0][0][0];
+                const viWords = viText.split(/\s+/);
 
-            lines.forEach((line, i) => translateFullLine(line, i));
+                const viContainer = document.getElementById(`vi-line-${i}`);
+                viContainer.innerHTML = viWords.map(vw => `<span class="vi-word" onclick="reverseSearch('${vw}', ${i})">${vw}</span>`).join(' ');
+            } catch (e) { console.error(e); }
         }
 
-        // Dịch cả câu để làm phụ đề mờ bên dưới
-        async function translateFullLine(text, idx) {
+        // TRA NGƯỢC: Nhấn tiếng Việt -> Highlight tiếng Hàn
+        async function reverseSearch(viWord, lineIdx) {
+            // Reset tất cả highlight
+            document.querySelectorAll('.word-hangul').forEach(el => el.classList.remove('highlight-korean'));
+            
             try {
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(text)}`);
+                // Tra ngược từ Việt sang Hàn
+                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=ko&dt=t&q=${encodeURI(viWord)}`);
                 const data = await res.json();
-                document.getElementById(`vi-full-${idx}`).innerText = data[0][0][0];
-            } catch (e) { document.getElementById(`vi-full-${idx}`).innerText = ""; }
+                const koEquivalent = data[0][0][0];
+
+                // Lưu vào dữ liệu trắc nghiệm
+                if(!quizData.find(item => item.ko === koEquivalent)) {
+                    quizData.push({ ko: koEquivalent, vi: viWord });
+                }
+
+                // Tìm và highlight từ Hàn trong dòng đó
+                const koWords = document.querySelectorAll(`#ko-line-${lineIdx} .word-hangul`);
+                koWords.forEach(el => {
+                    if (el.innerText.includes(koEquivalent) || koEquivalent.includes(el.innerText)) {
+                        el.classList.add('highlight-korean');
+                    }
+                });
+            } catch (e) { alert("Không tìm thấy từ tương ứng!"); }
         }
 
-        // DỊCH RIÊNG LẺ TỪNG TỪ KHI CLICK (CHÍNH XÁC 100%)
-        async function getPreciseMeaning(element, word) {
-            // Reset highlight
-            document.querySelectorAll('.word-wrapper').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+        // HỆ THỐNG TRẮC NGHIỆM
+        function startQuiz() {
+            if (quizData.length < 2) return alert("Hãy nhấn vào vài từ tiếng Việt để hệ thống học từ vựng trước khi làm trắc nghiệm!");
+            document.getElementById('quiz-container').style.display = 'flex';
+            nextQuestion();
+        }
 
-            const popup = document.getElementById('word-meaning-popup');
-            popup.innerText = "Đang tra...";
+        function nextQuestion() {
+            const correct = quizData[Math.floor(Math.random() * quizData.length)];
+            const options = [correct.vi];
+            
+            while(options.length < 3 && options.length < quizData.length) {
+                const randomVi = quizData[Math.floor(Math.random() * quizData.length)].vi;
+                if(!options.includes(randomVi)) options.push(randomVi);
+            }
+            options.sort(() => Math.random() - 0.5);
 
-            try {
-                // Gọi API dịch đúng duy nhất từ đó
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=vi&dt=t&q=${encodeURI(word)}`);
-                const data = await res.json();
-                const meaning = data[0][0][0];
-                
-                // Hiển thị nghĩa In Đỏ lên header
-                popup.innerHTML = `<i class="fas fa-arrow-right text-xs"></i> ${meaning.toUpperCase()}`;
-            } catch (e) {
-                popup.innerText = "Lỗi tra từ";
+            document.getElementById('quiz-word').innerText = correct.ko;
+            const optContainer = document.getElementById('quiz-options');
+            optContainer.innerHTML = options.map(opt => `
+                <div class="quiz-option" onclick="checkAnswer('${opt}', '${correct.vi}')">${opt}</div>
+            `).join('');
+        }
+
+        function checkAnswer(selected, correct) {
+            if(selected === correct) {
+                alert("Chính xác! 🎉");
+                nextQuestion();
+            } else {
+                alert("Sai rồi, thử lại nhé!");
             }
         }
 
+        function closeQuiz() { document.getElementById('quiz-container').style.display = 'none'; }
         function extractId(url) {
             const match = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
             return (match && match[2].length == 11) ? match[2] : false;
