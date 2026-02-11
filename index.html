@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LingoPro - Phrase Master Mode</title>
+    <title>LingoPro - Perfect Phrase Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -14,9 +14,7 @@
         #lyric-display::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .lyric-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .source-word { font-size: 1.25rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; margin-right: 5px; margin-bottom: 2px; }
-        /* Cho phép bôi đen lời nhạc */
-        .source-word::selection { background: #fef08a; color: #000; }
-        
+        .source-word::selection { background: #fef08a; color: #000; } /* Màu bôi đen */
         .line-translation { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e2e8f0; color: #64748b; font-style: italic; font-size: 0.9rem; }
         
         #translate-popup {
@@ -48,21 +46,21 @@
             <button onclick="initApp()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-blue-500 shadow-xl transition-all">🚀 Nạp dữ liệu học</button>
             <input type="text" id="yt-url" placeholder="Dán link YouTube..." class="w-full p-3 rounded-xl outline-none text-sm">
             <textarea id="lyric-input" rows="8" class="w-full p-3 rounded-xl outline-none text-sm" placeholder="[Tên idol] Lời bài hát..."></textarea>
-            <p class="text-[10px] text-slate-400 italic">Mẹo: Bôi đen một cụm từ để dịch cả cụm!</p>
+            <p class="text-[10px] text-slate-400 italic">Mẹo: Bôi đen một cụm (vd: watch out) để dịch chính xác!</p>
         </div>
 
         <div class="md:col-span-8">
             <div id="lyric-display" onmouseup="handleSelection()">
-                <div class="text-slate-500 text-center mt-20 italic text-xl">Dán lời nhạc và bôi đen để dịch cụm từ!</div>
+                <div class="text-slate-500 text-center mt-20 italic text-xl">Dán bài hát vào để bắt đầu!</div>
             </div>
         </div>
     </div>
 
     <div id="translate-popup">
         <div class="flex flex-col overflow-hidden">
-            <span class="text-xs uppercase font-bold text-slate-400 mb-1">Dịch cụm từ/từ</span>
+            <span class="text-xs uppercase font-bold text-slate-400 mb-1">Dịch cụm từ</span>
             <div class="flex items-center gap-2">
-                <span class="text-xl font-black truncate max-w-[150px]" id="pop-src">...</span>
+                <span class="text-xl font-black truncate max-w-[180px]" id="pop-src">...</span>
                 <span class="text-slate-300">/</span>
                 <span class="text-xl font-bold text-red-500" id="pop-vi">...</span>
             </div>
@@ -107,11 +105,11 @@
             } catch (e) { return "..."; }
         }
 
-        // XỬ LÝ BÔI ĐEN CỤM TỪ
+        // XỬ LÝ BÔI ĐEN (CÓ KHOẢNG CÁCH)
         async function handleSelection() {
             const selection = window.getSelection().toString().trim();
-            if (selection && selection.length > 1) {
-                // Nếu là cụm từ (có dấu cách)
+            // Nếu bôi đen từ 2 ký tự trở lên (để tránh click nhầm)
+            if (selection && selection.length >= 2) {
                 showTranslationPopup(selection);
             }
         }
@@ -140,14 +138,14 @@
                     } else {
                         span.style.color = "#000000";
                         span.innerText = word;
-                        const clean = word.replace(/[.,!?;'"Check“”‘’]/g, "");
+                        const clean = word.replace(/[.,!?;'"“”‘’]/g, "");
                         if(clean && !allWordsInLesson.includes(clean)) allWordsInLesson.push(clean);
                     }
-                    // Click vẫn dịch từ đơn nếu không bôi đen
-                    span.onclick = (e) => {
-                        if (window.getSelection().toString().length < 2) {
-                            showTranslationPopup(word);
-                        }
+                    
+                    // Click từ đơn (chỉ chạy nếu không có bôi đen)
+                    span.onclick = () => {
+                        const selection = window.getSelection().toString();
+                        if (!selection) showTranslationPopup(word);
                     };
                     wordsDiv.appendChild(span);
                 });
@@ -159,7 +157,11 @@
         }
 
         async function showTranslationPopup(rawText) {
-            const cleanText = rawText.replace(/[.,!?;'"“”‘’\[\]]/g, "").trim();
+            // Chỉ xóa ngoặc vuông và dấu câu ở đầu/cuối, giữ nguyên khoảng cách giữa các từ
+            let cleanText = rawText.replace(/[\[\]]/g, "").trim();
+            // Xóa dấu câu ở cuối cụm từ nếu có (vd: "watch out!" -> "watch out")
+            cleanText = cleanText.replace(/[.,!?;:'"“”‘’]$/g, "");
+
             if (!cleanText) return;
 
             const vi = await translateText(cleanText);
