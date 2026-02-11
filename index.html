@@ -26,6 +26,13 @@
         }
         .source-word:hover { color: #ef4444; transform: scale(1.05); }
 
+        /* Style mới cho phần dịch nguyên câu */
+        .line-translation {
+            margin-top: 12px; padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+            color: #64748b; font-style: italic; font-size: 0.95rem;
+        }
+
         #translate-popup {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
             min-width: 280px; background: white; color: #1e293b;
@@ -103,72 +110,89 @@
             if(text) renderLyrics(text);
         }
 
-        function renderLyrics(text) {
+        async function translateText(text) {
+            try {
+                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(text)}`);
+                const data = await res.json();
+                return data[0][0][0];
+            } catch (e) { return "..."; }
+        }
+
+        async function renderLyrics(text) {
             const display = document.getElementById('lyric-display');
             display.innerHTML = "";
-            allWordsInLesson = []; // Reset kho từ toàn bài
+            allWordsInLesson = [];
             
-            text.split('\n').filter(l => l.trim()).forEach(line => {
+            const lines = text.split('\n').filter(l => l.trim());
+
+            for (let line of lines) {
                 const card = document.createElement('div');
                 card.className = 'lyric-card';
+                
+                // Container cho các từ
+                const wordsDiv = document.createElement('div');
+                
                 line.split(/\s+/).forEach(word => {
-                    const clean = word.replace(/[.,!?;]/g, "");
-                    if(!allWordsInLesson.includes(clean)) allWordsInLesson.push(clean);
+                    // Bỏ các dấu câu: . , ' " ! ? ; và các loại ngoặc kép
+                    const clean = word.replace(/[.,!?;'"“”‘’]/g, "");
+                    if(clean && !allWordsInLesson.includes(clean)) allWordsInLesson.push(clean);
                     
                     const span = document.createElement('span');
                     span.className = 'source-word';
                     span.innerText = word;
-                    span.onclick = () => handleWordClick(word);
-                    card.appendChild(span);
+                    span.onclick = () => handleWordClick(clean);
+                    wordsDiv.appendChild(span);
                 });
+                
+                card.appendChild(wordsDiv);
+
+                // Thêm phần dịch nguyên câu
+                const transDiv = document.createElement('div');
+                transDiv.className = 'line-translation';
+                transDiv.innerText = "Đang dịch..."; 
+                card.appendChild(transDiv);
+                
                 display.appendChild(card);
-            });
+
+                // Gọi API dịch câu (không đợi để tránh block UI)
+                translateText(line).then(translatedLine => {
+                    transDiv.innerText = translatedLine;
+                });
+            }
         }
 
-        async function handleWordClick(word) {
-            const clean = word.replace(/[.,!?;]/g, "");
-            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(clean)}`);
-            const data = await res.json();
-            const vi = data[0][0][0];
+        async function handleWordClick(cleanWord) {
+            const vi = await translateText(cleanWord);
 
-            document.getElementById('pop-src').innerText = clean;
+            document.getElementById('pop-src').innerText = cleanWord;
             document.getElementById('pop-vi').innerText = vi;
             document.getElementById('translate-popup').classList.add('active');
             setTimeout(() => document.getElementById('translate-popup').classList.remove('active'), 2500);
 
-            // Lưu từ đã nhấn (ưu tiên)
-            if(!clickedWords.find(item => item.q === clean)) {
-                clickedWords.push({ q: clean, a: vi });
+            if(!clickedWords.find(item => item.q === cleanWord)) {
+                clickedWords.push({ q: cleanWord, a: vi });
             }
         }
 
+        // Các hàm Quiz giữ nguyên logic của bạn
         async function openQuiz() {
             if(allWordsInLesson.length < 4) return alert("Nạp bài học trước đã bạn ơi!");
-            
-            // THUẬT TOÁN ƯU TIÊN:
-            // 1. Lấy tất cả từ đã nhấn
             let prioritySet = [...clickedWords];
-            
-            // 2. Nếu chưa đủ 20 câu, lấy thêm từ trong bài chưa được nhấn
             let remainingCount = 20 - prioritySet.length;
             if (remainingCount > 0) {
                 let unclicked = allWordsInLesson.filter(w => !clickedWords.some(cw => cw.q === w));
-                // Lấy ngẫu nhiên các từ chưa nhấn cho đủ
                 unclicked.sort(() => Math.random() - 0.5);
-                
                 for(let i = 0; i < Math.min(remainingCount, unclicked.length); i++) {
-                    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(unclicked[i])}`);
-                    const data = await res.json();
-                    prioritySet.push({ q: unclicked[i], a: data[0][0][0] });
+                    const vi = await translateText(unclicked[i]);
+                    prioritySet.push({ q: unclicked[i], a: vi });
                 }
             }
-
-            currentQuizSet = prioritySet.slice(0, 20); // Chốt danh sách 20 câu
+            currentQuizSet = prioritySet.slice(0, 20);
             score = 0; currentQ = 0;
             document.getElementById('quiz-overlay').style.display = 'flex';
             document.getElementById('quiz-content').classList.remove('hidden');
             document.getElementById('quiz-result').classList.add('hidden');
-            startTimer(600); // 10 phút = 600 giây
+            startTimer(600);
             nextQuestion();
         }
 
@@ -178,7 +202,6 @@
             const item = currentQuizSet[currentQ];
             document.getElementById('quiz-q').innerText = item.q;
 
-            // Tạo options (lấy từ chính tập quiz hiện tại)
             let options = [item.a];
             let allPossibleAnswers = currentQuizSet.map(i => i.a);
             while(options.length < 4) {
