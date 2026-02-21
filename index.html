@@ -146,7 +146,7 @@
                     <option value="de">German</option>
                 </select>
             </div>
-            <button onclick="toggleDashboard()" class="p-2 hover:bg-slate-800 rounded-full transition"><i class="fa-solid fa-chart-simple"></i></button>
+            <button onclick="toggleDashboard()" class="p-2 hover:bg-slate-800 rounded-full transition"><i class="fa-solid fa-chart-simple text-indigo-400"></i></button>
             <button onclick="openQuiz()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-full font-bold text-sm transition shadow-lg shadow-indigo-600/20">TEST SKILLS</button>
         </div>
     </nav>
@@ -251,6 +251,32 @@
         </div>
     </div>
 
+    <div id="dashboard-overlay" class="fixed inset-0 z-[2500] bg-slate-950/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
+        <div class="max-w-4xl w-full glass-card p-8 border-t-4 border-indigo-500">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-black italic tracking-tighter"><i class="fa-solid fa-chart-line text-indigo-500 mr-2"></i> LEARNING ANALYTICS</h2>
+                <button onclick="toggleDashboard()" class="w-10 h-10 bg-slate-800 rounded-full hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="stat-card p-6 rounded-3xl text-center">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total Vocabulary</p>
+                    <h3 id="stat-vocab" class="text-5xl font-black text-indigo-500">0</h3>
+                </div>
+                <div class="stat-card p-6 rounded-3xl text-center">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Quiz Accuracy</p>
+                    <h3 id="stat-accuracy" class="text-5xl font-black text-pink-500">0%</h3>
+                </div>
+                <div class="stat-card p-6 rounded-3xl text-center">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Active Session</p>
+                    <h3 class="text-5xl font-black text-amber-500">1</h3>
+                </div>
+            </div>
+            <div class="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+                <canvas id="learningChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+
     <div id="quiz-overlay" class="fixed inset-0 z-[2000] bg-slate-950/95 backdrop-blur-xl hidden flex items-center justify-center p-4">
         <div class="max-w-2xl w-full">
             <div id="quiz-container" class="glass-card p-10 relative overflow-hidden">
@@ -303,6 +329,7 @@
             player: null,
             currentTranslation: { src: '', vi: '' },
             isDashboardOpen: false,
+            myChart: null, // Thêm cho Chart
             quiz: {
                 currentStep: 0,
                 score: 0,
@@ -409,7 +436,7 @@
 
         // Translation Engine
         async function triggerTranslation(text) {
-            if (!text || text.length < 2) return;
+            if (!text || text.length < 1) return; // Sửa length nhẹ
 
             const pop = document.getElementById('translation-popup');
             const popSrc = document.getElementById('pop-src');
@@ -464,7 +491,7 @@
 
             state.notebook.forEach((item, index) => {
                 const div = document.createElement('div');
-                div.className = 'glass-card p-4 hover:border-indigo-500/50 transition cursor-pointer relative group';
+                div.className = 'glass-card p-4 hover:border-indigo-500/50 transition cursor-pointer relative group mb-2';
                 div.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
@@ -490,7 +517,7 @@
         function clearNotebook() {
             if (confirm("Delete all saved vocabulary?")) {
                 state.notebook = [];
-                localStorage.clear();
+                localStorage.removeItem('lingopro_vocab');
                 updateNotebookUI();
             }
         }
@@ -511,10 +538,10 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // Quiz Management
+        // QUIZ MANAGEMENT
         function openQuiz() {
             if (state.notebook.length < 5) {
-                return alert("You need at least 5 saved words to start a quiz! Click on words to learn them first.");
+                return alert("You need at least 5 saved words to start a quiz!");
             }
             
             document.getElementById('quiz-overlay').style.display = 'flex';
@@ -522,7 +549,6 @@
             document.getElementById('quiz-main').style.display = 'none';
             document.getElementById('quiz-finish').style.display = 'none';
 
-            // Generate Quiz Questions
             setTimeout(() => {
                 startQuiz();
             }, 1000);
@@ -533,10 +559,8 @@
             state.quiz.score = 0;
             state.quiz.lives = 3;
             
-            // Randomize and select 10 words
             const pool = [...state.notebook].sort(() => 0.5 - Math.random());
             state.quiz.data = pool.slice(0, 10).map(item => {
-                // Get 3 random wrong answers
                 const distractors = state.notebook
                     .filter(i => i.vi !== item.vi)
                     .sort(() => 0.5 - Math.random())
@@ -585,7 +609,6 @@
             } else {
                 btn.classList.add('wrong');
                 state.quiz.lives--;
-                // Highlight correct one
                 buttons.forEach(b => {
                     if (b.innerText === correct) b.classList.add('correct');
                 });
@@ -611,6 +634,49 @@
             document.getElementById('quiz-overlay').style.display = 'none';
         }
 
+        // PHẦN THÊM: DASHBOARD LOGIC
+        function toggleDashboard() {
+            const dash = document.getElementById('dashboard-overlay');
+            if (dash.classList.contains('hidden')) {
+                dash.classList.remove('hidden');
+                updateDashboardData();
+                gsap.from(dash.querySelector('.glass-card'), { scale: 0.8, opacity: 0, duration: 0.4, ease: "back.out(1.7)" });
+            } else {
+                dash.classList.add('hidden');
+            }
+        }
+
+        function updateDashboardData() {
+            document.getElementById('stat-vocab').innerText = state.notebook.length;
+            document.getElementById('stat-accuracy').innerText = state.quiz.score > 0 ? Math.round((state.quiz.score / 10) * 100) + "%" : "0%";
+
+            const ctx = document.getElementById('learningChart').getContext('2d');
+            if (state.myChart) state.myChart.destroy();
+            
+            state.myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+                    datasets: [{
+                        label: 'Từ vựng mới',
+                        data: [2, 8, 4, 10, state.notebook.length, 0, 0],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
         // Global Helpers
         function closePopup() {
             document.getElementById('translation-popup').classList.remove('active');
@@ -621,10 +687,9 @@
         }
 
         // Utility: Auto-scroll with player time
-        // This is a placeholder for a more advanced sync feature
         setInterval(() => {
             if (state.player && state.player.getCurrentTime && document.getElementById('auto-scroll').checked) {
-                // logic for sync scrolling based on timestamps [00:00] in lyrics
+                // Placeholder for sync
             }
         }, 1000);
 
